@@ -1,1 +1,1 @@
-# M-M-Class-Project
+# 音乐与数学 课程项目
