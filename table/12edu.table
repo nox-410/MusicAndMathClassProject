@@ -1,6 +1,6 @@
 # Timidity tuning table created by pytuning,
 # call timidity with the -Z option to enable.
-# Note reference: 69; Freq reference: 440.000000 Hz
+# Note reference: 60; Freq reference: 261.625565 Hz
 8176
 8662
 9177

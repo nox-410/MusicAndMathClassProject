@@ -11,13 +11,13 @@ def write_tuning_table(root_dir):
         os.mkdir(root_dir)
     os.chdir(root_dir)
     scale = pytuning.create_edo_scale(12)
-    tuning = create_timidity_tuning(scale, reference_note=69)
+    tuning = create_timidity_tuning(scale, reference_note=60)
     with open("12edu.table", "w") as table:
         table.write(tuning)
     print("Generating 12-edu using: ")
     print(scale)
     scale = pytuning.create_pythagorean_scale(number_down_fifths=0)
-    tuning = create_timidity_tuning(scale, reference_note=69)
+    tuning = create_timidity_tuning(scale, reference_note=60)
     with open("pythagorean.table", "w") as table:
         table.write(tuning)
     print("Generating pythagorean using: ")
@@ -38,7 +38,7 @@ def write_tuning_table(root_dir):
         sp.Rational(15, 8), # B
         sp.Integer(2), # C
     ] # see https://wenku.baidu.com/view/d71e97520a1c59eef8c75fbfc77da26925c59634.html
-    tuning = create_timidity_tuning(scale, reference_note=69)
+    tuning = create_timidity_tuning(scale, reference_note=60)
     with open("pure.table", "w") as table:
         table.write(tuning)
     print("Generating pure using: ")
