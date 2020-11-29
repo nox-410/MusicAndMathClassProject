@@ -42,7 +42,7 @@ if __name__ =='__main__':
         print("Error: Directory already exists")
         exit(0)
     os.mkdir(args.path)
-    os.chdir("dataset")
+    os.chdir(args.path)
     download()
     extract()
     remove_tar()
