@@ -13,23 +13,30 @@ stored_data = []
 sample_freq = 44100
 sample_len = 10 * sample_freq # 10 second
 
-def save_npy():
+#midi file name starts from
+midi_index = 0
+
+def save_npy(test = False):
     data = np.array([i[0] for i in stored_data])
     label = np.array([i[1] for i in stored_data])
-    np.save(os.path.join(args.path, "data.npy"), data)
-    np.save(os.path.join(args.path, "label.npy"), label)
+    if test:
+        np.save(os.path.join(args.path, "test_data.npy"), data)
+        np.save(os.path.join(args.path, "test_label.npy"), label)
+    else:
+        np.save(os.path.join(args.path, "data.npy"), data)
+        np.save(os.path.join(args.path, "label.npy"), label)
 
 # try to find the frequency file for timidity
 def get_frequency_file():
     path = os.path.dirname(__file__)
     path = os.path.join(path, "..")
     path = os.path.join(path, "..")
-    path = os.path.join(path, "table")
+    path = os.path.join(path, "freq_table")
     path = os.path.abspath(path)
     freq_files = [
-        os.path.join(path, "12edu.table"),
-        os.path.join(path, "pure.table"),
-        os.path.join(path, "pythagorean.table")
+        os.path.join(path, "equal.txt"),
+        os.path.join(path, "pure.txt"),
+        os.path.join(path, "pythagorean.txt")
     ]
     return freq_files
 
@@ -56,19 +63,21 @@ def convert_and_save(cmd, wavfile, label):
     os.remove(wavfile)
 
 def main():
+    global midi_index
     freqs = get_frequency_file()
-    for midi in ["{}.mid".format(i) for i in range(10000)]:
+    while True:
+        midi = "{}.mid".format(midi_index)
+        midi_index += 1
         midi = os.path.abspath(os.path.join(args.midipath, midi))
         for i, freq in enumerate(freqs):
             _ ,wavfile = tempfile.mkstemp() # tempfile to store .wav
             cmd = ["timidity", "-Ow", "-o", wavfile]  + ["-Z", freq, midi]
-            cmd = cmd + ["--quiet=2"] # quieter
+            cmd = cmd + [">>", "/dev/null"] # quieter
             cmd = " ".join(cmd)
             print(cmd)
             convert_and_save(cmd, wavfile, i)
         if len(stored_data) >= int(args.n):
             break
-    save_npy()
 
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()
@@ -79,4 +88,10 @@ if __name__ =='__main__':
     if not os.path.exists(args.path):
         os.mkdir(args.path)
     main()
-    print("Done!")
+    save_npy(test=False)
+    # also generate test dataset
+    print("--- Generating test dataset ---")
+    stored_data = []
+    main()
+    save_npy(test=True)
+    print("--- Done ---")
