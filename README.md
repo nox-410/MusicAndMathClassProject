@@ -1,10 +1,19 @@
 # 音乐与数学 课程项目
 
-## 安装依赖
+## 运行准备
 
+* 由于一些软件和库只受特定平台支持，建议在Ubuntu 18.04或更高版本上运行
+
+* 安装TiMidity
 ```shell
 apt-get install timidity
-pip install PyTuning
+```
+
+* 确保Python版本不低于3.7，并安装下面的库（不一定要安装gpu版本）
+```shell
+PyTuning
+torch
+torchaudio
 ```
 
 ## TiMidity使用说明
