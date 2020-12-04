@@ -18,7 +18,7 @@ torchaudio==0.7.0
 
 ## TiMidity使用说明
 
-TiMidity是一个强大的midi转音频工具，这里我们只介绍它的最基本的用法
+TiMidity是一个强大的midi转音频工具，这里只介绍它最基本的用法
 ```shell
 timidity -Ow -Z <freqtable> -o <outfile> <infile>
 ```
@@ -76,7 +76,14 @@ python3 python/show_spec.py dataset/pure/08361.npy output.png
 ```
 
 ## 训练
-* 先手动将上述生成的`dataset/`分为`train_set/`和`test_set/`
+* 在`python/train.py`中设置
+```python
+DATASET_PATH = './dataset'  # 数据集目录
+BATCH_SIZE = 16
+TEST_RATIO = .2  # 将此比例的数据划分为测试集，每种律制单独划分
+SEED = 0         # 随机数种子，用于保持可复现性
+EPOCH = 10
+```
 * 运行
 ```shell
 python3 python/train.py

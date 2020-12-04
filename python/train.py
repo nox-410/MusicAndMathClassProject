@@ -6,8 +6,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+DATASET_PATH = './dataset'
 BATCH_SIZE = 16
+TEST_RATIO = .2
 SEED = 0
+EPOCH = 10
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -118,8 +121,8 @@ class D3TModel(nn.Module):
         return x
 
 
-train_set = S3TDataset('./dataset')
-test_set = train_set.partial(.2)
+train_set = S3TDataset(DATASET_PATH)
+test_set = train_set.partial(TEST_RATIO)
 train_set.split()
 print('train:', len(train_set))
 print('test:', len(test_set))
@@ -167,7 +170,7 @@ def test():
     print('correct: %d/%d' % (correct, i + 1))
 
 
-for i in range(5):
+for i in range(EPOCH):
     print('epoch:', i + 1)
     train_epoch()
     test()
