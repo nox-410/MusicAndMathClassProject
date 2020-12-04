@@ -1,21 +1,29 @@
 import os
+import random
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-BATCH_SIZE = 32
+BATCH_SIZE = 16
+SEED = 0
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+if __name__ == '__main__':
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed_all(SEED)
+    np.random.seed(SEED)
+    random.seed(SEED)
+    torch.backends.cudnn.deterministic = True
 
 
 class S3TDataset():
     '''Spectrograms of 3 Temperations.'''
 
-    def __init__(self, path='./dataset', sample_rate=8000, split=False):
+    def __init__(self, path='./dataset'):
         self._path = path
-        self._sample_rate = sample_rate
 
         self._labels = []
         for i in os.listdir(path):
@@ -35,12 +43,9 @@ class S3TDataset():
         for n, l, i in sorted(items):
             p = os.path.join(path, l, n)
             specgram = np.load(p)  # (channel, bin, frame)
-            label = torch.tensor(i)
-            if split:
-                for j in range(specgram.shape[2]):
-                    self._items.append((specgram[:, :, j:j + 1], label))
-            else:
-                self._items.append((specgram, label))
+            stereo = (specgram[:1], specgram[1:])
+            specgram = np.concatenate(stereo, axis=2)
+            self._items.append((specgram, i))
 
     def __len__(self):
         return len(self._items)
@@ -64,26 +69,59 @@ class S3TDataset():
             pin_memory=pin_memory,
         )
 
+    def partial(self, ratio=.1):
+        labels = [[] for _ in range(len(self._labels))]
+        for s, l in self._items:
+            labels[l].append(s)
+
+        self._items = []
+        partial_items = []
+
+        for i, label in enumerate(labels):
+            k = int(len(label) * ratio)
+            samples = set(random.sample(range(len(label)), k))
+            for j, s in enumerate(label):
+                if j in samples:
+                    partial_items.append((s, i))
+                else:
+                    self._items.append((s, i))
+
+        class PartialDataset(S3TDataset):
+            _path = self._path
+            _labels = self._labels
+            _items = partial_items
+
+            def __init__(self):
+                pass
+
+        return PartialDataset()
+
+    def split(self):
+        splited_items = []
+        for s, l in self._items:
+            for i in range(s.shape[2]):
+                splited_items.append((s[:, :, i:i + 1], l))
+        self._items = splited_items
+
 
 class D3TModel(nn.Module):
     '''Discriminator of 3 Temperations.'''
 
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(2049, 3)
+        self.fc1 = nn.Linear(2048, 3)
 
     def forward(self, x):
         x = self.fc1(x)
-        x = F.log_softmax(x, dim=2)
         return x
 
 
-train_set = S3TDataset('./train_set', split=True)
+train_set = S3TDataset('./dataset')
+test_set = train_set.partial(.2)
+train_set.split()
 print('train:', len(train_set))
-train_loader = train_set.data_loader(BATCH_SIZE, True)
-
-test_set = S3TDataset('./test_set')
 print('test:', len(test_set))
+train_loader = train_set.data_loader(BATCH_SIZE, True)
 test_loader = test_set.data_loader()
 
 model = D3TModel()
@@ -98,11 +136,12 @@ def train_epoch():
         label = label.to(device)
 
         output = model(data[:, :, :, 0])
+        output = F.log_softmax(output, dim=2)
         loss = F.nll_loss(output.squeeze(1), label)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print('[%5d]\r' % i, end='', flush=True)
+        print('[%5d]\r' % (i * BATCH_SIZE), end='', flush=True)
 
 
 def test():
@@ -111,15 +150,17 @@ def test():
     for i, (data, label) in enumerate(test_loader):
         data = data.to(device)  # (batch=1, channel=1, bin, frame)
         label = label.to(device)
-        pred_count = [0] * 3
+        pred_sum = torch.zeros(3)
 
         for j in range(data.size(-1)):
-            output = model(data[:, :, :, j])
-            pred = output.argmax(-1).item()
-            pred_count[pred] += 1
+            with torch.no_grad():
+                output = model(data[:, :, :, j])
+            output = output.squeeze()
+            output = F.softmax(output, dim=0)
+            pred_sum += output
 
-        pred = pred_count.index(max(pred_count))
-        if pred == label.item():
+        pred = pred_sum.argmax(dim=-1, keepdim=True)
+        if pred == label:
             correct += 1
     print('correct: %d/%d' % (correct, i + 1))
 
