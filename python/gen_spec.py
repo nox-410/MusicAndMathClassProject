@@ -5,7 +5,7 @@ import torchaudio
 from torchaudio.compliance import kaldi
 
 N_FFT = 4096
-SAMPLE_RATE = 22050
+SAMPLE_RATE = 11025
 OVERRIDE_PATH = './dataset'
 
 transform = torchaudio.transforms.Spectrogram(N_FFT)
@@ -20,6 +20,7 @@ def wav_to_spec(in_path, out_path):
         orig_freq=sample_rate,
         new_freq=SAMPLE_RATE,
     )
+    waveform = torchaudio.functional.dither(waveform)
     specgram = transform(waveform)  # (channels, bins, frames)
     specgram = specgram[:, 1:, :]   # drop the first bin
     np.save(out_path, specgram.numpy())

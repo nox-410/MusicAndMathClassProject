@@ -112,7 +112,9 @@ class D3TModel(nn.Module):
         self.fc1 = nn.Linear(2048, 3)
 
     def forward(self, x):
+        # (batch, channel=1, bin=2048)
         x = self.fc1(x)
+        # (batch, channel=1, class=3)
         return x
 
 
@@ -121,7 +123,7 @@ test_set = train_set.partial(.2)
 train_set.split()
 print('train:', len(train_set))
 print('test:', len(test_set))
-train_loader = train_set.data_loader(BATCH_SIZE, True)
+train_loader = train_set.data_loader(BATCH_SIZE, shuffle=True)
 test_loader = test_set.data_loader()
 
 model = D3TModel()
