@@ -1,0 +1,65 @@
+\documentclass[12pt,UTF8]{ctexart}  
+\usepackage[x11names,svgnames,dvipsnames]{xcolor}\usepackage{listings}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{CJK}    %导入CJK宏包
+%\usepackage{ctex} 
+\usepackage{epstopdf}
+\geometry{left=2cm,right=2cm,top=2cm,bottom=2.5cm}
+\usepackage{amsmath}  
+\usepackage{amsfonts}
+\usepackage{amsmath, bm}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{enumerate}
+\usepackage{multirow}
+\usepackage{nicefrac}
+\renewcommand{\baselinestretch}{1.6}
+
+
+
+\usepackage{tikz}
+
+\makeatletter %使\section中的内容左对齐
+\renewcommand{\section}{\@startsection{section}{1}{0mm}
+	{-\baselineskip}{0.5\baselineskip}{\bf\leftline}}
+\makeatother
+
+\begin{document}
+\section*{\large 分类模型}
+我们采用频谱做为输入数据来训练模型，模型的结构如图1所示。模型的输入首先经过比率为 $R$ 的 Dropout，之后 通过 AveragePooling 和 MaxPooling 减少待拟合参数，Dropout 和 Pooling 都有利于提高模型的泛化能力减少过拟合。
+\begin{center}
+ 	\includegraphics*[height=4cm]{p1} \\ 图1. 分类模型
+\end{center}
+经过Pooling层后模型通过线性组合和softmax 激活函数给出输入数据的分类标签预测值。其中softmax 激活函数为
+\begin{align}
+y_i = \frac{e^{x_i}}{\sum_{i}e^{x_i}}
+\end{align}
+\par 训练中待优化的损失函数(loss function) 包括两项，第一项为评估分类效果的categorical crossentropy 损失函数 
+\begin{align}
+l_c = -\frac{1}{n}\sum_{i} \left[ y_i {\rm ln} \hat{y_i} + (1-y) {\rm ln}(1-\hat{y_i}) \right]
+\end{align}
+其中$n = 3$ 为种类数，$y_i$ 为实际分类标签值，$\hat{y_i}$ 为模型预测值。损失函数的第二项为对线性连接权值的$l_1$正则化项：
+\begin{align}
+l_1 = \lambda \sum_{j} |w_j|
+\end{align}
+这一项可以让模型学得稀疏的连接权重并在一定程度上防止过拟合。总的损失函数
+\begin{align}
+{\rm loss} = l_c + l_1
+\end{align}
+\par 我们将各类别数据集中70\% 的数据作为模型的训练集，剩余的30\% 用做模型验证集，模型训练时采用 Adam 优化器，训练过程会经过多轮迭代，每一代训练后会测试模型在验证集上的预测效果，效果最好的模型会被保存下来。若模型在验证集上的预测效果连续多代(如50代)没有提高，训练将会终止，并把记录下的效果最好的模型对验证集的预测准确率作为模型的预测成绩$S$。
+\par 我们在题目要求的三种律制各10段的小数据集上对模型进行了测试。不同的Dropout 比率 $R$ 和 l1 正则化系数$\lambda$ 的测试结果如表一所示。其中预测成绩以 $S \pm \sigma_S$ 表示，代表了模型在10次测试中的平均成绩和其标准误。可以看出模型的预测成绩受到$\lambda$ 和 $R$ 的影响，在试验的参数中，$\lambda =0.01 ,R = 0.8$ 时模型取得最好的预测成绩为 $81.1 \pm 3.3 \%$。 
+\\
+\centerline{\textbf{表一\ 分类模型测试结果 }}  \\
+\vspace{-0.5cm}
+\\
+\begin{tabular}{p{2.2cm}<{\centering}|p{1.8cm}<{\centering}|p{1.8cm}<{\centering}|p{1.8cm}<{\centering}|p{1.8cm}<{\centering}|p{1.5cm}<{\centering}|p{1.8cm}<{\centering}|p{1.8cm}<{\centering}}
+	\Xhline{1.2pt}
+	$R$ & 0 & 0 & 0 &  0.3 & 0.6 & 0.8 & 0.9 \\
+	\hline
+	$\lambda$ & 0.001 & 0.01 & 0.1 & 0.01 & 0.01 & 0.01 & 0.01  \\
+	\hline
+	预测成绩\%&\small $70.0 \pm 3.3$&\small $74.4 \pm 4.4$&\small $72.2 \pm 3.4$&\small $68.9 \pm 4.9$&\small $76.7 \pm 3.9$&\small $81.1 \pm 3.3$&\small $76.7 \pm 2.6$ \\
+	\Xhline{1.2pt}
+\end{tabular}
+\end{document}
