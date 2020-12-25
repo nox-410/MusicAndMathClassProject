@@ -12,12 +12,14 @@ SAMPLE_RATE = 8000
 OVERRIDE_PATH = './dataset'
 SAVE_PATH = './specset'
 
+
 def wav_to_npy(in_path, out_path):
     print('%s -> %s' % (in_path, out_path))
     waveform, sample_rate = lbr.load(in_path)
-    waveform = lbr.resample(waveform, orig_sr = sample_rate, target_sr = SAMPLE_RATE)
+    waveform = lbr.resample(waveform, orig_sr=sample_rate, target_sr=SAMPLE_RATE)
     specgram = np.abs(lbr.stft(waveform))
-    np.save(out_path, specgram)    
+    np.save(out_path, specgram)
+
 
 if __name__ == '__main__':
     i = 1
